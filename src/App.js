@@ -17,17 +17,20 @@ class BooksApp extends React.Component {
   }
 
   changeShelf = (event, book) => {
-    console.log('Change shelf: ', event.target.value)
     const shelf = event.target.value
     this.setState((state) => {
       const shelfBook = state.books.find((b) => b.id === book.id)
-      shelfBook.shelf = shelf
+      if (shelfBook) {
+        shelfBook.shelf = shelf
+      } else {
+        book.shelf = shelf
+        state.books.push(book)
+      }
+      state.books.sort(sortBy('title'))
       return {books: state.books}
     })
 
-    BooksAPI.update(book, shelf).then((res) => {
-      // console.log('BooksApi update response: ', res)
-    })
+    BooksAPI.update(book, shelf)
   }
 
   render() {

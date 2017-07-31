@@ -3,6 +3,7 @@ import {Link} from 'react-router-dom'
 import * as BooksAPI from './BooksAPI'
 import Book from './Book'
 import _ from 'lodash'
+import sortBy from 'sort-by'
 
 class Search extends Component {
   state = {
@@ -11,10 +12,20 @@ class Search extends Component {
     results: []
   }
 
+  componentDidMount () {
+    if (this.props.books.length === 0) {
+      this.setState({loading: true})
+      BooksAPI.getAll().then((books) => {
+        this.props.updateBooks(books)
+        this.setState({loading: false})
+      })
+    }
+  }
+
   updateQuery = (query) => {
     if (!query) {
-      this.setState({query: query})
-      this.props.updateBooks([])
+      this.setState({query: query, results: [], loading: false})
+      // this.props.updateBooks([])
       this.search.cancel()
       return
     }
@@ -27,17 +38,32 @@ class Search extends Component {
     BooksAPI.search(query.trim(), 20).then((response) => {
       // console.log('search resulst', response)
       if (!response.error && this.state.query !== '') {
-        this.props.updateBooks(response)
+        // this.props.updateBooks(response)
+        this.setState({results: response})
       } else {
-        this.props.updateBooks([])
+        this.setState({results: []})
+        // this.props.updateBooks([])
       }
       this.setState({loading: false})
     })
   }, 250 )
 
   render () {
-    const {books} = this.props
-    const {query, loading} = this.state
+    const myBooks = this.props.books
+    const {query, loading, results} = this.state
+
+    const books = results.map((book) => {
+      let myBook = myBooks.find(b => b.id === book.id)
+      if (myBook) {
+        book.shelf = myBook.shelf
+      } else {
+        book.shelf = 'none'
+      }
+      return book
+    })
+
+    books.sort(sortBy('title'))
+
     return (
       <div className="search-books">
         <div className="search-books-bar">
@@ -56,8 +82,8 @@ class Search extends Component {
               value={query}
               onChange={(event) => this.updateQuery(event.target.value)}
               placeholder="Search by title or author" />
-
           </div>
+          <span className='loading' >{loading && 'loading'}</span>
         </div>
         <div className="search-books-results">
           {books.length === 0 && query && !loading && <p>No results found</p>}

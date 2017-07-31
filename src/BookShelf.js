@@ -11,18 +11,17 @@ const shelves = {
 
 class BookShelf extends Component {
   state = {
-    loading: true
+    loading: false
   }
 
   componentDidMount () {
-    BooksAPI.getAll().then((books) => {
-      this.props.updateBooks(books)
-      this.setState({loading: false})
-    })
-  }
-
-  componentWillUnmount () {
-    this.props.updateBooks([])
+    if (this.props.books.length === 0) {
+      this.setState({loading: true})
+      BooksAPI.getAll().then((books) => {
+        this.props.updateBooks(books)
+        this.setState({loading: false})
+      })
+    }
   }
 
   render () {
